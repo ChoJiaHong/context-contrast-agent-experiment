@@ -12,7 +12,10 @@ def paired_task_differences(records: list[dict], left: str, right: str, metric: 
     for record in records:
         if record["method"] not in {left, right}:
             continue
-        task_values.setdefault(record["task_id"], {}).setdefault(record["method"], []).append(float(record["metrics"][metric]))
+        value = record["metrics"].get(metric)
+        if value is None:
+            continue
+        task_values.setdefault(record["task_id"], {}).setdefault(record["method"], []).append(float(value))
     differences=[]
     for methods in task_values.values():
         if left in methods and right in methods:

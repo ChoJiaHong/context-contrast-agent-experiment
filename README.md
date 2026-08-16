@@ -38,13 +38,14 @@ Copy config.example.yaml for real experiments and set OPENAI_API_KEY only in the
     cc-exp run-all --tasks tasks/pilot.jsonl --runs 5 --out results/pilot.jsonl
     cc-exp analyze --results results/pilot.jsonl
     python -m context_contrast_exp.cli report --results results/pilot.jsonl --out reports/pilot_report.md
+    cc-exp export-adjudication --results results/pilot.jsonl --tasks tasks/pilot.jsonl --out reports/adjudication.jsonl
 
-Every call is persisted as JSONL with raw and validated output, seed, tokens, latency, cost, model, method, task, and run identifiers. Formatting retries are distinct from loop budgets. The mock client deliberately reads labels to exercise infrastructure; its results are **not model evidence**.
+Every successful call is persisted with raw and validated output, seed, tokens, latency, model, method, task, run, action, and call identifiers; run records also contain aggregate cost. Formatting retries are distinct from loop iterations. The deterministic mock uses task-text fixture rules—not benchmark ground truth—to exercise infrastructure, and its results are **not model evidence**.
 
 ## Benchmark and scoring
 
 The six-task adversarial pilot spans public health, software operations, manufacturing, energy, logistics, and administration. Ground truth uses sets, aliases, strategy families, and rule/numeric evaluators rather than a single target sentence. Negative controls penalize invented context and needless strategy changes. Deterministic normalized aliases are primary; exported JSONL supports optional external semantic judging and human adjudication without rerunning a model.
 
-The report uses bootstrap intervals, descriptive standard deviations in analysis utilities, and predefined Go/Weak/No-Go logic. Six tasks are explicitly underpowered. Run equal-budget conditions by setting the same call caps in configuration; unrestricted conditions use method-appropriate caps.
+The report uses bootstrap intervals, descriptive standard deviations in analysis utilities, and predefined Go/Weak/No-Go logic. Six tasks are explicitly underpowered. Set `budget_mode: equal_calls` to apply `equal_call_budget` as the common maximum opportunity for every method. Set `budget_mode: unrestricted` to use the method loop limits subject to the safety cap `max_total_calls`.
 
 The Alishan railway can motivate the intuition informally, but is intentionally absent from scored tasks.

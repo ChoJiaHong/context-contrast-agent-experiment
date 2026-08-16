@@ -13,3 +13,10 @@ def test_paired_differences_average_runs_within_task():
         {"task_id":"b","method":"single","metrics":{"score":1}},
     ]
     assert paired_task_differences(rows,"full","single","score") == [0.5, 0.0]
+
+def test_paired_differences_skip_unadjudicated_values():
+    rows = [
+        {"task_id":"a","method":"full","metrics":{"score":None}},
+        {"task_id":"a","method":"single","metrics":{"score":0}},
+    ]
+    assert paired_task_differences(rows,"full","single","score") == []

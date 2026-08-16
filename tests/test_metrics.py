@@ -13,3 +13,11 @@ def test_objective_rules_are_benchmark_owned():
     assert evaluate_strategy("simple",evaluator) is True
     assert evaluate_strategy("ornate",evaluator) is False
     assert evaluate_strategy("anything",{"type":"human","spec":{}}) is None
+
+def test_optional_secondary_matcher_does_not_replace_primary():
+    from context_contrast_exp.evaluation.matching import secondary_matches
+    class Matcher:
+        def similarity(self, predicted, expected):
+            return 0.9 if predicted[0] == expected[0] else 0.1
+    assert secondary_matches(["cold locker"], ["chilled capacity"], Matcher()) == [("cold locker", "chilled capacity", 0.9)]
+    assert set_scores(["cold locker"], ["chilled capacity"])["f1"] == 0.0

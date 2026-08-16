@@ -14,6 +14,7 @@ def parser() -> argparse.ArgumentParser:
         if name=="run": s.add_argument("--method",required=True,choices=METHODS)
     a=sub.add_parser("analyze"); a.add_argument("--results",required=True)
     r=sub.add_parser("report"); r.add_argument("--results",required=True); r.add_argument("--out",required=True)
+    e=sub.add_parser("export-adjudication"); e.add_argument("--results",required=True); e.add_argument("--tasks",required=True); e.add_argument("--out",required=True)
     return p
 
 def main(argv: list[str]|None=None) -> int:
@@ -30,8 +31,14 @@ def main(argv: list[str]|None=None) -> int:
     if args.command=="analyze":
         rows=[json.loads(x) for x in Path(args.results).read_text().splitlines() if x.strip()]
         for method in sorted({x["method"] for x in rows}):
-            subset=[x for x in rows if x["method"]==method]; print(f"{method}: objective_success={sum(x['metrics']['objective_success'] for x in subset)/len(subset):.3f}")
+            subset=[x["metrics"].get("objective_success") for x in rows if x["method"]==method]
+            scored=[float(value) for value in subset if value is not None]
+            summary="human adjudication pending" if not scored else f"{sum(scored)/len(scored):.3f}"
+            print(f"{method}: objective_success={summary}")
         return 0
+    if args.command=="export-adjudication":
+        from .evaluation.adjudication import export_ambiguous_cases
+        count=export_ambiguous_cases(args.results,args.tasks,args.out); print(f"wrote {count} cases to {args.out}"); return 0
     generate_report(args.results,args.out); print(f"wrote {args.out}"); return 0
 
 if __name__=="__main__": raise SystemExit(main())

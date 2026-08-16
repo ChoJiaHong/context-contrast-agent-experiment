@@ -14,11 +14,16 @@ def generate_report(results_path: str, out: str) -> None:
     for r in records: counts[r["task_type"]]+=1
     lines += [", ".join(f"{k}: {v}" for k,v in sorted(counts.items())),"","## Aggregate results table","| Method | Objective mean ± SD | 95% bootstrap CI | Context F1 | Calls | Tokens |","|---|---:|---:|---:|---:|---:|"]
     for method, rs in grouped.items():
-        obj=summarize([float(x["metrics"]["objective_success"]) for x in rs]); f1=summarize([x["metrics"]["context_f1"] for x in rs])
-        lines.append(f"| {method} | {obj['mean']:.3f} ± {obj['sd']:.3f} | [{obj['ci_low']:.3f}, {obj['ci_high']:.3f}] | {f1['mean']:.3f} | {sum(x['calls'] for x in rs)/len(rs):.1f} | {sum(x['input_tokens']+x['output_tokens'] for x in rs)/len(rs):.1f} |")
+        objective_values=[float(x["metrics"]["objective_success"]) for x in rs if x["metrics"].get("objective_success") is not None]
+        obj=summarize(objective_values) if objective_values else None; f1=summarize([x["metrics"]["context_f1"] for x in rs])
+        objective_text="human adjudication pending" if obj is None else f"{obj['mean']:.3f} ± {obj['sd']:.3f}"
+        interval_text="—" if obj is None else f"[{obj['ci_low']:.3f}, {obj['ci_high']:.3f}]"
+        lines.append(f"| {method} | {objective_text} | {interval_text} | {f1['mean']:.3f} | {sum(x['calls'] for x in rs)/len(rs):.1f} | {sum(x['input_tokens']+x['output_tokens'] for x in rs)/len(rs):.1f} |")
     lines += ["","## Per-task results"]
     for task in sorted({r["task_id"] for r in records}):
-        rows=[r for r in records if r["task_id"]==task]; lines.append(f"- **{task}:** "+", ".join(f"{r['method']}={int(r['metrics']['objective_success'])}" for r in rows))
+        rows=[r for r in records if r["task_id"]==task]
+        values=[f"{r['method']}={'pending' if r['metrics'].get('objective_success') is None else int(r['metrics']['objective_success'])}" for r in rows]
+        lines.append(f"- **{task}:** "+", ".join(values))
     negative=[r for r in records if r["task_type"].startswith("negative")]
     def comparison(left: str, right: str) -> str:
         values=paired_task_differences(records,left,right,"objective_success")
