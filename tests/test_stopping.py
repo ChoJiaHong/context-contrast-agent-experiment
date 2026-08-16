@@ -54,3 +54,11 @@ def test_upward_execute_uses_counterfactual_conditions():
     output, _ = execute(FakeTask(), generate, max_rounds=3)
     assert [data["removed_condition"] for action, data in calls if action == "counterfactual_removal_test"] == ["incidental", "essential"]
     assert output.stop_reason == "no_incidental_context"
+
+def test_loop_aggregation_does_not_drop_earlier_discoveries():
+    from context_contrast_exp.methods.common import merge_outputs
+    first = FakeOutput(differences=["first"], constraints=["c1"])
+    second = FakeOutput(differences=["second"], constraints=["c2"])
+    merged = merge_outputs([first, second], stop_reason="done")
+    assert merged.relevant_context_differences == ["first", "second"]
+    assert merged.constraints == ["c1", "c2"]

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
 
+from .common import merge_outputs
+
 if TYPE_CHECKING:
     from ..schemas import LLMResponse, MethodOutput, Task
 
@@ -30,5 +32,5 @@ def execute(task: Task, generate: Generate, *, max_rounds: int, **_: object) -> 
         history.append({"round": len(history) + 1, "removed_condition": removed, "solution_failed_or_degraded": essential, "incidental_removed": not essential})
         stop, reason = should_stop(history, max_rounds)
         if stop:
-            return final.model_copy(update={"reasoning_trace": history, "stop_reason": reason}), responses
-    return final.model_copy(update={"reasoning_trace": history, "stop_reason": "all_conditions_tested"}), responses
+            return merge_outputs([item.parsed for item in responses], reasoning_trace=history, stop_reason=reason), responses
+    return merge_outputs([item.parsed for item in responses], reasoning_trace=history, stop_reason="all_conditions_tested"), responses

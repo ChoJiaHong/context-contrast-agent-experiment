@@ -15,14 +15,14 @@ Tests H1–H5 from EXPERIMENT_SPEC.md: formulation discovery, downstream success
 assumption-breaking: 6, constraint-changing: 6, cost-structure-changing: 6, negative-control-conventional: 6, negative-control-irrelevant: 6, resource-emergence: 6
 
 ## Aggregate results table
-| Method | Objective mean | 95% bootstrap CI | Context F1 | Calls | Tokens |
+| Method | Objective mean ± SD | 95% bootstrap CI | Context F1 | Calls | Tokens |
 |---|---:|---:|---:|---:|---:|
-| direct | 1.000 | [1.000, 1.000] | 0.333 | 1.0 | 20.0 |
-| generic_reframe | 1.000 | [1.000, 1.000] | 0.333 | 1.0 | 20.0 |
-| context_contrast_single | 1.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
-| downward_loop | 1.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
-| upward_loop | 1.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
-| bidirectional_loop | 1.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
+| direct | 1.000 ± 0.000 | [1.000, 1.000] | 0.333 | 1.0 | 20.0 |
+| generic_reframe | 1.000 ± 0.000 | [1.000, 1.000] | 0.333 | 1.0 | 20.0 |
+| context_contrast_single | 1.000 ± 0.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
+| downward_loop | 1.000 ± 0.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
+| upward_loop | 1.000 ± 0.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
+| bidirectional_loop | 1.000 ± 0.000 | [1.000, 1.000] | 1.000 | 1.0 | 20.0 |
 
 ## Per-task results
 - **assumption_001:** direct=1, generic_reframe=1, context_contrast_single=1, downward_loop=1, upward_loop=1, bidirectional_loop=1
@@ -33,13 +33,13 @@ assumption-breaking: 6, constraint-changing: 6, cost-structure-changing: 6, nega
 - **resource_001:** direct=1, generic_reframe=1, context_contrast_single=1, downward_loop=1, upward_loop=1, bidirectional_loop=1
 
 ## Downward-loop ablation
-Compare bidirectional_loop with upward_loop, and downward_loop with single pass. Mock output is not an ablation result.
+Paired task-level objective difference (bidirectional_loop − upward_loop): 0.000 (95% bootstrap CI [0.000, 0.000]; n=6 tasks).
 
 ## Upward-loop ablation
-Compare bidirectional_loop with downward_loop; essential-context precision/recall are independently reported.
+Paired task-level objective difference (bidirectional_loop − downward_loop): 0.000 (95% bootstrap CI [0.000, 0.000]; n=6 tasks).
 
 ## Full vs single-pass comparison
-Compare objective success under equal budgets; richer text alone is not success.
+Paired task-level objective difference (bidirectional_loop − context_contrast_single): 0.000 (95% bootstrap CI [0.000, 0.000]; n=6 tasks).
 
 ## Negative-control / over-reframing analysis
 Mean over-reframing: 0.000.

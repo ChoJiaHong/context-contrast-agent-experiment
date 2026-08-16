@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
 
+from .common import merge_outputs
+
 if TYPE_CHECKING:
     from ..schemas import LLMResponse, MethodOutput, Task
 
@@ -34,5 +36,5 @@ def execute(task: Task, generate: Generate, *, max_rounds: int, patience: int, *
         seen |= current
         stop, reason = should_stop(history, patience, max_rounds)
         if stop:
-            output = response.parsed.model_copy(update={"reasoning_trace": history, "stop_reason": reason})
+            output = merge_outputs([item.parsed for item in responses], reasoning_trace=history, stop_reason=reason)
             return output, responses

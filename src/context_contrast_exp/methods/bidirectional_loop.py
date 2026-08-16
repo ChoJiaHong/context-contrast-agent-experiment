@@ -1,5 +1,6 @@
 from .direct import Generate
 from .downward_loop import execute as downward
+from .common import merge_outputs
 from ..schemas import LLMResponse, MethodOutput, Task
 
 
@@ -12,7 +13,7 @@ def execute(task: Task, generate: Generate, *, max_rounds: int, patience: int, m
     trace = list(discovered.reasoning_trace)
     for condition in task.context_facts[:max_up_rounds]:
         if len(responses) >= max_total_calls:
-            return current.model_copy(update={"reasoning_trace": trace, "stop_reason": "max_total_calls"}), responses
+            return merge_outputs([discovered, current], reasoning_trace=trace, stop_reason="max_total_calls"), responses
         checked = generate("validate_counterfactual_removal", {"task": task.model_dump(), "candidate": current.model_dump(), "removed_condition": condition})
         responses.append(checked); current = checked.parsed
         essential = condition in current.essential_context_conditions
@@ -23,5 +24,5 @@ def execute(task: Task, generate: Generate, *, max_rounds: int, patience: int, m
             trace.append({"action": "return_to_downward", "missing_differences": sorted(missing)})
             remaining = max_total_calls - len(responses)
             refined, extra = downward(task, generate, max_rounds=min(max_rounds, remaining), patience=patience)
-            responses.extend(extra); discovered = refined; current = refined
-    return current.model_copy(update={"reasoning_trace": trace, "stop_reason": "validation_complete"}), responses
+            responses.extend(extra); discovered = merge_outputs([discovered, refined]); current = refined
+    return merge_outputs([discovered, *[item.parsed for item in responses]], reasoning_trace=trace, stop_reason="validation_complete"), responses
