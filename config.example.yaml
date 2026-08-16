@@ -1,0 +1,12 @@
+provider: mock
+model: mock-deterministic-v1
+temperature: 0.0
+max_down_rounds: 3
+max_up_rounds: 3
+max_total_calls: 10
+patience: 1
+format_retries: 2
+budget_mode: equal_calls
+equal_call_budget: 3
+approximate_input_cost_per_million: 0.0
+approximate_output_cost_per_million: 0.0

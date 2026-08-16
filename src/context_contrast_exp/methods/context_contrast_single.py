@@ -1,0 +1,8 @@
+from .direct import Generate
+from .common import task_input
+from ..schemas import LLMResponse, MethodOutput, Task
+
+
+def execute(task: Task, generate: Generate, **_: object) -> tuple[MethodOutput, list[LLMResponse]]:
+    response = generate("single_context_contrast_then_solve", {"task": task_input(task)})
+    return response.parsed, [response]
