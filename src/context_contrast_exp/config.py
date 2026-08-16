@@ -9,9 +9,10 @@ class ExperimentConfig(BaseModel):
     temperature: float = Field(0.0, ge=0, le=2)
     max_down_rounds: int = Field(3, ge=1)
     max_up_rounds: int = Field(3, ge=1)
-    max_total_calls: int = Field(10, ge=1)
+    max_total_calls: int = Field(10, ge=2)
     patience: int = Field(1, ge=1)
     format_retries: int = Field(2, ge=0)
+    budget_mode: Literal["equal_calls", "unrestricted"] = "equal_calls"
     approximate_input_cost_per_million: float = 0
     approximate_output_cost_per_million: float = 0
 

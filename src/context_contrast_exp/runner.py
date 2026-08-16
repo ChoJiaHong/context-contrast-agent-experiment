@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from .config import ExperimentConfig
 from .evaluation.metrics import score_output
 from .llm import MockLLMClient, OpenAIClient
-from .methods import METHODS
+from .methods import METHODS, get_executor
 from .schemas import RunRecord, Task
 
 def load_tasks(path: str) -> list[Task]:
@@ -26,13 +26,17 @@ def run(tasks: list[Task], methods: list[str], runs: int, config: ExperimentConf
        for method in methods:
         system=Path(f"prompts/{method}.md").read_text()
         for run_id in range(runs):
-          seed=run_id; payload=json.dumps({"task":task.model_dump(),"method":method})
-          last_error=None
-          for attempt in range(config.format_retries+1):
-            try: response=client.generate(system=system,user=payload,seed=seed); break
-            except (ValidationError,json.JSONDecodeError) as exc: last_error=exc
-          else: raise ValueError(f"malformed output after formatting retries: {last_error}")
-          cost=(response.input_tokens*config.approximate_input_cost_per_million+response.output_tokens*config.approximate_output_cost_per_million)/1_000_000
-          record=RunRecord(task_id=task.id,domain=task.domain,task_type=task.task_type,method=method,run_id=run_id,seed=seed,model=client.model,output=response.parsed,raw_responses=[response.raw_response],calls=1,input_tokens=response.input_tokens,output_tokens=response.output_tokens,latency_seconds=response.latency_seconds,approximate_cost=cost,metrics=score_output(response.parsed,task),configuration=config.model_dump(),is_mock=config.provider=="mock")
+          seed=run_id
+          def generate(action: str, data: dict):
+            payload=json.dumps({"method":method,"action":action,**data})
+            last_error=None
+            for _attempt in range(config.format_retries+1):
+              try: return client.generate(system=system,user=payload,seed=seed)
+              except (ValidationError,json.JSONDecodeError) as exc: last_error=exc
+            raise ValueError(f"malformed output after formatting retries: {last_error}")
+          output,responses=get_executor(method)(task,generate,max_rounds=min(config.max_down_rounds,config.max_total_calls),max_up_rounds=min(config.max_up_rounds,max(0,config.max_total_calls-1)),patience=config.patience,max_total_calls=config.max_total_calls)
+          input_tokens=sum(r.input_tokens for r in responses); output_tokens=sum(r.output_tokens for r in responses)
+          cost=(input_tokens*config.approximate_input_cost_per_million+output_tokens*config.approximate_output_cost_per_million)/1_000_000
+          record=RunRecord(task_id=task.id,domain=task.domain,task_type=task.task_type,method=method,run_id=run_id,seed=seed,model=client.model,output=output,raw_responses=[r.raw_response for r in responses],calls=len(responses),input_tokens=input_tokens,output_tokens=output_tokens,latency_seconds=sum(r.latency_seconds for r in responses),approximate_cost=cost,metrics=score_output(output,task),configuration=config.model_dump(),is_mock=config.provider=="mock")
           records.append(record); fh.write(record.model_dump_json()+"\n"); fh.flush()
     return records
