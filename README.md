@@ -22,3 +22,29 @@ The repository is intentionally designed to **falsify**, not merely confirm, the
 5. Is the full method better than generic reframing under comparable inference budgets?
 
 See `EXPERIMENT_SPEC.md` for the experimental design and `CODEX_TASK.md` for the implementation task intended for Codex.
+
+## Installation
+
+Requires Python 3.11+.
+
+    python -m pip install -e '.[dev]'
+
+Copy config.example.yaml for real experiments and set OPENAI_API_KEY only in the environment. The default mock provider is deterministic and synthetic.
+
+## Reproduction
+
+    cc-exp validate-tasks tasks/pilot.jsonl
+    cc-exp run --tasks tasks/pilot.jsonl --method direct --runs 5
+    cc-exp run-all --tasks tasks/pilot.jsonl --runs 5 --out results/pilot.jsonl
+    cc-exp analyze --results results/pilot.jsonl
+    python -m context_contrast_exp.cli report --results results/pilot.jsonl --out reports/pilot_report.md
+
+Every call is persisted as JSONL with raw and validated output, seed, tokens, latency, cost, model, method, task, and run identifiers. Formatting retries are distinct from loop budgets. The mock client deliberately reads labels to exercise infrastructure; its results are **not model evidence**.
+
+## Benchmark and scoring
+
+The six-task adversarial pilot spans public health, software operations, manufacturing, energy, logistics, and administration. Ground truth uses sets, aliases, strategy families, and rule/numeric evaluators rather than a single target sentence. Negative controls penalize invented context and needless strategy changes. Deterministic normalized aliases are primary; exported JSONL supports optional external semantic judging and human adjudication without rerunning a model.
+
+The report uses bootstrap intervals, descriptive standard deviations in analysis utilities, and predefined Go/Weak/No-Go logic. Six tasks are explicitly underpowered. Run equal-budget conditions by setting the same call caps in configuration; unrestricted conditions use method-appropriate caps.
+
+The Alishan railway can motivate the intuition informally, but is intentionally absent from scored tasks.
