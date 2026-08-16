@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
 
-from .common import merge_outputs
+from .common import merge_outputs, task_input
 
 if TYPE_CHECKING:
     from ..schemas import LLMResponse, MethodOutput, Task
@@ -19,7 +19,8 @@ def should_stop(history: list[dict[str, Any]], max_rounds: int) -> tuple[bool, s
 
 
 def execute(task: Task, generate: Generate, *, max_rounds: int, max_total_calls: int = 10, **_: object) -> tuple[MethodOutput, list[LLMResponse]]:
-    candidate = generate("produce_candidate_solution", {"task": task.model_dump()})
+    visible_task = task_input(task)
+    candidate = generate("produce_candidate_solution", {"task": visible_task})
     responses = [candidate]
     conditions = list(task.context_facts)
     history: list[dict[str, Any]] = []
@@ -28,7 +29,7 @@ def execute(task: Task, generate: Generate, *, max_rounds: int, max_total_calls:
         if len(responses) >= max_total_calls:
             return merge_outputs([item.parsed for item in responses], reasoning_trace=history, stop_reason="max_total_calls"), responses
         removed = conditions.pop(0)
-        response = generate("counterfactual_removal_test", {"task": task.model_dump(), "candidate": candidate.parsed.model_dump(), "removed_condition": removed, "remaining_conditions": conditions})
+        response = generate("counterfactual_removal_test", {"task": visible_task, "candidate": candidate.parsed.model_dump(), "removed_condition": removed, "remaining_conditions": conditions})
         responses.append(response); final = response.parsed
         essential = removed in response.parsed.essential_context_conditions
         history.append({"round": len(history) + 1, "removed_condition": removed, "solution_failed_or_degraded": essential, "incidental_removed": not essential})

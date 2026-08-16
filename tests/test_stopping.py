@@ -30,6 +30,9 @@ class FakeResponse:
         self.parsed = output
 
 class FakeTask:
+    id = "fake"
+    domain = "testing"
+    specific_problem = "fake problem"
     context_facts = ["incidental", "essential"]
     def model_dump(self):
         return {"id": "fake"}
@@ -62,3 +65,33 @@ def test_loop_aggregation_does_not_drop_earlier_discoveries():
     merged = merge_outputs([first, second], stop_reason="done")
     assert merged.relevant_context_differences == ["first", "second"]
     assert merged.constraints == ["c1", "c2"]
+
+def test_visible_task_payload_excludes_benchmark_answers():
+    from context_contrast_exp.methods.common import task_input
+    payload = task_input(FakeTask())
+    assert set(payload) == {"id", "domain", "specific_problem", "context_facts"}
+    assert "ground_truth" not in payload
+    assert "objective_evaluator" not in payload
+
+def test_bidirectional_resolves_missing_context_then_resolves_candidate():
+    from context_contrast_exp.methods.bidirectional_loop import execute
+    actions = []
+    refinement = False
+    def generate(action, data):
+        nonlocal refinement
+        actions.append((action, data))
+        if action == "downward_discovery_round":
+            differences = ["known", "missing"] if data["validation_feedback"] else ["known"]
+            if data["validation_feedback"]:
+                refinement = True
+            return FakeResponse(FakeOutput(differences=differences, constraints=["changed"]))
+        if action == "validate_counterfactual_removal":
+            differences = ["known", "missing"]
+            return FakeResponse(FakeOutput(differences=differences))
+        return FakeResponse(FakeOutput(differences=["known", "missing"] if refinement else ["known"]))
+    output, responses = execute(FakeTask(), generate, max_rounds=3, patience=1, max_total_calls=10, max_up_rounds=2)
+    assert sum(action == "solve_using_discovered_context" for action, _ in actions) == 2
+    feedback = [data["validation_feedback"] for action, data in actions if action == "downward_discovery_round" and data["validation_feedback"]]
+    assert feedback == [["missing"], ["missing"]]
+    assert output.stop_reason == "validation_complete"
+    assert len(responses) == 10

@@ -42,6 +42,8 @@ Copy config.example.yaml for real experiments and set OPENAI_API_KEY only in the
 
 Every successful call is persisted with raw and validated output, seed, tokens, latency, model, method, task, run, action, and call identifiers; run records also contain aggregate cost. Formatting retries are distinct from loop iterations. The deterministic mock uses task-text fixture rules—not benchmark ground truth—to exercise infrastructure, and its results are **not model evidence**.
 
+Evaluated methods receive only the task ID, domain, specific problem, and context facts. Ground-truth sets, aliases, evaluator rules, task-type labels, and the benchmark's reference problem class remain inside the scoring harness and are never included in model prompts.
+
 ## Benchmark and scoring
 
 The six-task adversarial pilot spans public health, software operations, manufacturing, energy, logistics, and administration. Ground truth uses sets, aliases, strategy families, and rule/numeric evaluators rather than a single target sentence. Negative controls penalize invented context and needless strategy changes. Deterministic normalized aliases are primary; exported JSONL supports optional external semantic judging and human adjudication without rerunning a model.

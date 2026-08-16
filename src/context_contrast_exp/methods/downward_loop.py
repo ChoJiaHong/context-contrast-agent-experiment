@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
 
-from .common import merge_outputs
+from .common import merge_outputs, task_input
 
 if TYPE_CHECKING:
     from ..schemas import LLMResponse, MethodOutput, Task
@@ -21,12 +21,21 @@ def should_stop(history: list[dict[str, Any]], patience: int, max_rounds: int) -
     return (True, "patience_exhausted") if misses >= patience else (False, "")
 
 
-def execute(task: Task, generate: Generate, *, max_rounds: int, patience: int, **_: object) -> tuple[MethodOutput, list[LLMResponse]]:
+def execute(
+    task: Task,
+    generate: Generate,
+    *,
+    max_rounds: int,
+    patience: int,
+    initial_seen: set[str] | None = None,
+    validation_feedback: list[str] | None = None,
+    **_: object,
+) -> tuple[MethodOutput, list[LLMResponse]]:
     responses: list[LLMResponse] = []
     history: list[dict[str, Any]] = []
-    seen: set[str] = set()
+    seen: set[str] = set(initial_seen or ())
     while True:
-        response = generate("downward_discovery_round", {"task": task.model_dump(), "round": len(history) + 1, "prior_states": history})
+        response = generate("downward_discovery_round", {"task": task_input(task), "round": len(history) + 1, "prior_states": history, "validation_feedback": validation_feedback or []})
         responses.append(response)
         current = set(response.parsed.relevant_context_differences)
         structural = bool(response.parsed.constraints or response.parsed.resources or response.parsed.assumption_changes or response.parsed.cost_structure_changes)

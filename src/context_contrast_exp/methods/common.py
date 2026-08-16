@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ..schemas import MethodOutput
+    from ..schemas import MethodOutput, Task
 
 
 LIST_FIELDS = (
@@ -15,6 +15,16 @@ LIST_FIELDS = (
     "cost_structure_changes",
     "essential_context_conditions",
 )
+
+
+def task_input(task: Task) -> dict[str, object]:
+    """Return only information visible to evaluated methods, never scoring labels."""
+    return {
+        "id": task.id,
+        "domain": task.domain,
+        "specific_problem": task.specific_problem,
+        "context_facts": list(task.context_facts),
+    }
 
 
 def ordered_union(values: Iterable[Iterable[str]]) -> list[str]:
